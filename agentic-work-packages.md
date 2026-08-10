@@ -1,6 +1,7 @@
 # Agentic Work Packages: the Cell / Wave / Gate Model
 
 **Status:** documented from practice, 2026-08-10
+**Public home:** [nodots/nodots-ai-workflows](https://github.com/nodots/nodots-ai-workflows) — this file is mirrored in the private Nodots workspace at `docs/agentic-work-packages.md`; keep the two copies in sync
 **Canonical examples:** [nodots/backgammon#360](https://github.com/nodots/backgammon/issues/360) (AI Engine + Plugin Platform — executed, 25+ cells) and [nodots/backgammon#406](https://github.com/nodots/backgammon/issues/406) (Human vs Human Play — planned to the same model). These live in a private repo; §9 is a fictional worked example, invented to the same shape, for readers without access.
 **Lineage:** `nodots/auto-shop` (cells, SCOPE.json, phase gates) → `docs/autonomous-claude-system.md` + #15 (daemon-style orchestrator design, superseded) → the live pattern below (Claude coordinator + worktree-isolated subagents)
 
@@ -134,6 +135,31 @@ Labels on `nodots/backgammon` track each cell's state; the coordinator promotes 
 7. **Dispatch wave 1** (deps-free cells, ≤ WIP cap), one worktree + worker per cell.
 8. **On each merge:** tick the epic checkbox, relabel, append to the progress log, recompute the queue, dispatch the next wave.
 9. **Log every decision** (scope-downs, gap cells, integration requirements) in the epic body — the epic must remain sufficient to resume the run cold.
+
+## 7a. Drafting the plan with AI
+
+The epic and its cells are themselves AI-drafted. This adds a third role to the model: the **planner** drafts the plan, the **coordinator** dispatches it, **workers** execute it. In practice the planner and coordinator are often the same session — the session that wrote the epic starts dispatching wave 1 — but the roles have different rules: the planner may only produce issues, never code; and nothing dispatches until a human approves the epic.
+
+The drafting protocol, expanding §7 steps 1–4:
+
+1. **Exploration fan-out before any planning.** Read-only agents sweep the affected repos in parallel and report what already works and where the real gaps are, with file:line evidence. The epic's Context section is written from these findings. The rule the cell template enforces downstream — "cites file:line evidence, not speculation" — starts here: a gap the exploration did not evidence does not become a cell. This is the "pre-planning exploration" row of §4a: cheap models, wide fan-out, no write access.
+2. **Draft the epic from the previous epic.** The planner is given the most recent epic as its template and copies the "Agentic execution model" and §4a sections nearly verbatim, adjusting repo names, WIP cap, and frozen boundaries. Structure is inherited, not reinvented — drift in the dispatch rules between epics is a bug.
+3. **Cut cells against the cut criteria.** One repo, one branch, one agent, roughly one session of work, acceptance criteria checkable by a machine or a gate. The planner drafts every cell issue in full — §3 template, complete `SCOPE.json`, execution profile assigned from §4a. A cell the planner cannot write a complete `SCOPE.json` for is not ready to be a cell; it goes back to exploration.
+4. **Mechanical validation.** Before review, the planner checks what a linter would: every `allowedPaths` glob matches real paths; no two cells marked parallelizable have overlapping `allowedPaths`; every `dependsOn` names an existing cell; the dependency graph is acyclic; every phase ends in a gate; wave 1 has at least two deps-free cells (a plan whose wave 1 is a single cell is serialized, not parallel).
+5. **Adversarial plan review.** A second agent, with no stake in the draft, attacks it: hidden dependencies between "parallelizable" cells, gates that assert unit-level facts instead of integration proofs, cells sized beyond one session, contract surfaces left out of `forbiddenPaths`, missing work between phases. Findings amend the draft or spawn exploration follow-ups. This is the same adversarial pattern §4a prescribes for contract-change cells, applied to the plan itself.
+6. **Human approval is the gate between planning and dispatch.** The human reviews the epic, not the cells one by one — the epic's phase structure, gates, and out-of-scope list are where planning errors are cheap to catch. Iterate on the plan freely: a regenerated plan costs minutes; a mis-cut cell discovered in wave 3 costs a blocked wave.
+
+Known failure modes of AI-drafted plans, and the mechanism that absorbs each:
+
+| Failure mode | Absorbed by |
+|---|---|
+| Over-scoped cells (planner optimism) | Scope-down at dispatch (rule 6) |
+| Missing work between cells | Gap cells opened mid-run (rule 7) |
+| Under-provisioned execution profiles | Escalation at re-dispatch (rule 10) |
+| Invented gaps with no evidence | file:line evidence rule at drafting (step 1) |
+| Cross-cell requirements discovered late | Integration requirements pinned to cells (rule 8) |
+
+The plan is a live document precisely because AI drafting is fallible in bounded, recoverable ways. The mechanisms in §4 are not workarounds — they are the error-correction loop that makes cheap AI planning safe to run.
 
 ## 8. Pointers
 

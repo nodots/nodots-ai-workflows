@@ -9,3 +9,7 @@ Patterns for running programs of work with coordinated AI agents, documented fro
 ## Status
 
 Documented from practice, 2026-08-10. The canonical epics this pattern was extracted from live in a private repository; the worked example in §9 of the doc is fictional and self-contained.
+
+## License
+
+[MIT](LICENSE). Copy the templates into your own repos, public or private, without attribution friction.

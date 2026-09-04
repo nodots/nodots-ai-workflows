@@ -73,7 +73,7 @@ Rules embedded in the template:
 
 - **`SCOPE.json` is the isolation contract.** `allowedPaths` bounds the worker's edits; `forbiddenPaths` always includes the frozen contract package, shared config (`package.json`), and CI (`.github/**`). In #360, every cell's `forbiddenPaths` included `packages/backgammon-engine-protocol/**` once the contract froze — parallel agents cannot collide on the interface. Contract changes get their own dedicated cell (label `cell:contract-change`, highest priority), never an ad-hoc edit.
 - **Dependencies are declared in three mirrored places:** the `Depends on: #N` line, `SCOPE.json.dependsOn`, and the phase's blocking gate. Redundancy is deliberate — coordinator, worker, and plan reader each consult a different one.
-- **Definition of done is uniform:** acceptance criteria met; tests/types/lint green; `SCOPE.json` respected; `[READY]:` PR opened and linked.
+- **Definition of done is uniform:** acceptance criteria met; tests/types/lint green; `SCOPE.json` respected; `[READY]:` PR opened and linked. Green tests are necessary, not sufficient — [working-agreements.md](working-agreements.md) carries the evidence rules the checklist assumes: the test is written before the fix and fails without it (§2), UI cells prove acceptance in a browser (§2), a cell that adds a field/type/dependency names its boundary round-trip test (§5), and a suite that is skipped or a CI that is disabled is not a gate at all (§3).
 - **`execution` is the cell's execution profile** — which model tier the worker runs on and which subagent pattern it uses. The planner assigns a default from the mapping table in §4a; the coordinator resolves the final profile at dispatch (rule 10). The `pattern` vocabulary is closed: `solo` (one worker, no reviewer), `implement+review` (worker spawns a code-reviewer subagent before opening the PR), `implement+test` (Implementer/Tester pair under the same `SCOPE.json`, per rule 9), `gate-verify` (an independent verifier agent proves the integration claim; browser gates use e2e-acceptance-tester). A cell that seems to need a novel pattern is a signal it is cut wrong, the same as a cell that wants to edit its `forbiddenPaths`.
 
 ## 4. Dispatch rules (the coordinator's guidelines)
@@ -170,6 +170,7 @@ The plan is a live document precisely because AI drafting is fallible in bounded
 - Labels: `gh label list --repo nodots/backgammon` (`cell:*`, `claude-ready`, `epic`)
 - Pattern sources: `nodots/auto-shop`; `docs/autonomous-claude-system.md` (historical daemon design)
 - Workspace worktree convention + slash commands: `CLAUDE.md` ("Parallel Claude Sessions with Git Worktrees")
+- Worker execution and evidence rules: [working-agreements.md](working-agreements.md) — test-first, dead gates, no silent fallbacks, boundary tests, release sequencing, hook-enforced scope/handoff, reporting discipline
 
 ## 9. Worked example (fictional)
 
